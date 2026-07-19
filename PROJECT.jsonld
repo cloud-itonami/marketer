@@ -1,0 +1,45 @@
+{
+  "@context": {
+    "name": "https://schema.org/name",
+    "description": "https://schema.org/description",
+    "url": "https://schema.org/url",
+    "capabilities": "https://schema.org/hasDefinedTerm",
+    "scheduler": "https://schema.org/Action"
+  },
+  "@type": "Project",
+  "name": "etzhayyim-project-marketer",
+  "description": "Global market statistics: ingest, normalize (COFOG/ISIC/etc), analyze, and visualize for marketing decisions.",
+  "url": "https://marketer.etzhayyim.com/",
+  "capabilities": [
+    {
+      "@type": "DefinedTerm",
+      "name": "Global Market Stats Intelligence",
+      "description": "Collect official statistics across countries and industries, normalize classifications, and provide chart-ready outputs."
+    }
+  ],
+  "scheduler": {
+    "@type": "Action",
+    "name": "marketer-scheduler",
+    "description": "Planned: periodic dataset refresh + quality checks."
+  },
+  "rdfUnifiedDocuments": {
+    "@type": "Dataset",
+    "name": "Unified top-level RDF/JSON-LD documents",
+    "description": "Consolidated from project top-level *.jsonld files except PROJECT.jsonld.",
+    "documents": [
+      {
+        "fileName": "capabilities.jsonld",
+        "content": {
+          "@context": {
+            "Capability": "https://dodaf.example/capability",
+            "name": "https://schema.org/name",
+            "description": "https://schema.org/description"
+          },
+          "@type": "Capability",
+          "name": "Market Intelligence from Official Statistics",
+          "description": "Collect, normalize (COFOG/IPQC/etc), analyze, and visualize global market statistics by country, industry, age, and product for marketer decision-making."
+        }
+      }
+    ]
+  }
+}

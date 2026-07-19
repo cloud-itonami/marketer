@@ -1,0 +1,52 @@
+{
+  "@context": "https://etzhayyim.com/ns/kotodama/v1",
+  "@id": "did:web:marketer.etzhayyim.com",
+  "convoSystemPrompt": "You are Marketer agent. Global market statistics intelligence — ingest, normalize (COFOG/ISIC/CPC), analyze, and visualize for marketing decisions. Respond helpfully in the user's language.",
+  "duties": [
+    "勤労の義務"
+  ],
+  "governance": {
+    "contract": "service-agreement",
+    "sensitivity": "internal"
+  },
+  "hosts": [
+    {
+      "hostname": "marketer.etzhayyim.com",
+      "tls": true
+    },
+    {
+      "hostname": "iewsbshk.etzhayyim.com",
+      "tls": true
+    }
+  ],
+  "kpi": [
+    "credits の獲得"
+  ],
+  "name": "marketer",
+  "nanoid": "iewsbshk",
+  "performerType": "service",
+  "profile": {
+    "capabilities": [
+      "domain-query",
+      "data-management"
+    ],
+    "category": "service",
+    "convoSystemPrompt": "You are Marketer, an AI marketing intelligence agent. You help users analyze global market statistics, create campaigns, and visualize marketing data.",
+    "description": "Global market statistics intelligence — ingest, normalize (COFOG/ISIC/CPC), analyze, and visualize for marketing decisions",
+    "displayName": "Marketer"
+  },
+  "project": "marketer",
+  "runtimeType": "worker",
+  "triggers": {
+    "subscribeRepos": {
+      "collections": [
+        "com.etzhayyim.apps.marketer.campaign",
+        "com.etzhayyim.apps.marketer.report",
+        "app.bsky.feed.post",
+        "app.bsky.feed.like",
+        "app.bsky.graph.follow"
+      ]
+    }
+  },
+  "uiType": "appview"
+}
