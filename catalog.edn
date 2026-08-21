@@ -1,0 +1,152 @@
+;; Dataset catalog — README.md「Data Contract (DIV-2)」の Dataset (metadata) を実装する正本。
+;; UI（appview/marketer-ui-iewsbshk）の Architecture 手順 1「カタログ取得」が読む対象。
+;;
+;; 規則: ここに載る URL は載せた時点で実際に取得し HTTP 2xx を確認したものだけ。
+;; 取得できなかった出典は :catalog/unverified-sources に名前のみ記録する（URL は載せない）。
+;; 観測値のサンプル（:dataset/verified-sample)は API が実際に返した値の転記であり、推計・捏造をしない。
+[{:db/id -1
+  :catalog/id "marketer-dataset-catalog"
+  :catalog/schema "etzhayyim.marketer.catalog/v1"
+  :catalog/checked-at "2026-08-21T16:32:16Z"
+  :catalog/checked-how "curl -sSL（browser UA、--max-time 25）で各 URL の HTTP status を実測。2xx のみ収載"
+  :catalog/entry-count 14}
+
+ ;; ───────────────────────────── observation datasets ─────────────────────────────
+ {:db/id -2
+  :dataset/id "worldbank-wdi"
+  :dataset/name "World Bank World Development Indicators"
+  :dataset/source "World Bank"
+  :dataset/source-url "https://data.worldbank.org/"
+  :dataset/api-url "https://api.worldbank.org/v2/country/JPN/indicator/NY.GDP.MKTP.CD?format=json&date=2019:2023"
+  :dataset/license "CC BY 4.0"
+  :dataset/license-url "https://datacatalog.worldbank.org/public-licenses"
+  :dataset/update-schedule :quarterly
+  :dataset/measures ["gdp" "population" "expenditure"]
+  :dataset/geo-coding "ISO 3166-1 alpha-3"
+  :dataset/verified-sample
+  {:note "API が 2026-08-21 に実際に返した値の転記（indicator NY.GDP.MKTP.CD, source lastupdated 2026-07-13）"
+   :geo "JPN" :measure "gdp" :unit "USD"
+   :observations {2019 5245755000479.03
+                  2020 5189197543645.38
+                  2021 5225933520753.1
+                  2022 4447976207314.78
+                  2023 4384854269961.93}}}
+
+ {:db/id -3
+  :dataset/id "oecd-sdmx"
+  :dataset/name "OECD Data Explorer (SDMX REST)"
+  :dataset/source "OECD"
+  :dataset/source-url "https://data-explorer.oecd.org/"
+  :dataset/api-url "https://sdmx.oecd.org/public/rest/dataflow"
+  :dataset/update-schedule :continuous
+  :dataset/measures ["gdp" "expenditure" "trade"]
+  :dataset/classification-systems ["cofog" "isic"]
+  :dataset/note "COFOG 別政府支出は SNA Table 11 系 dataflow。license URL は bot に 403 のため非収載（:catalog/unverified-sources 参照）"}
+
+ {:db/id -4
+  :dataset/id "un-data"
+  :dataset/name "UNdata portal"
+  :dataset/source "United Nations Statistics Division"
+  :dataset/source-url "https://data.un.org/"
+  :dataset/update-schedule :yearly
+  :dataset/measures ["population" "gdp" "trade"]}
+
+ {:db/id -5
+  :dataset/id "unsd-ama"
+  :dataset/name "UN National Accounts — Analysis of Main Aggregates (AMA)"
+  :dataset/source "United Nations Statistics Division"
+  :dataset/source-url "https://unstats.un.org/unsd/snaama/"
+  :dataset/update-schedule :yearly
+  :dataset/measures ["gdp" "gni"]
+  :dataset/geo-coding "ISO 3166-1 / UN M49"}
+
+ {:db/id -6
+  :dataset/id "un-wpp"
+  :dataset/name "UN World Population Prospects"
+  :dataset/source "UN DESA Population Division"
+  :dataset/source-url "https://population.un.org/wpp/"
+  :dataset/update-schedule :biennial
+  :dataset/measures ["population"]
+  :dataset/note "age_band 正規化（0-14 / 15-64 / 65+ 等）の基準系列"}
+
+ {:db/id -7
+  :dataset/id "eurostat"
+  :dataset/name "Eurostat dissemination API"
+  :dataset/source "Eurostat"
+  :dataset/source-url "https://ec.europa.eu/eurostat"
+  :dataset/api-url "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/tps00001?format=JSON&lang=en"
+  :dataset/update-schedule :continuous
+  :dataset/measures ["population" "gdp" "expenditure"]
+  :dataset/classification-systems ["nace" "cofog"]
+  :dataset/verified-sample
+  {:note "API が 2026-08-21 に実際に返した dataset label の転記"
+   :dataset-label "Population on 1 January" :updated "2026-07-21T23:00:00+0200"}}
+
+ {:db/id -8
+  :dataset/id "estat-jp"
+  :dataset/name "e-Stat 政府統計の総合窓口"
+  :dataset/source "総務省統計局 / 独立行政法人統計センター"
+  :dataset/source-url "https://www.e-stat.go.jp/"
+  :dataset/api-url "https://www.e-stat.go.jp/api/"
+  :dataset/license-url "https://www.e-stat.go.jp/terms-of-use"
+  :dataset/update-schedule :continuous
+  :dataset/measures ["population" "expenditure" "sales"]
+  :dataset/note "国勢調査の年齢階級（age_band 規格化の入力）を含む。API 利用にはアプリケーション ID 登録が必要"}
+
+ {:db/id -9
+  :dataset/id "ilostat-sdmx"
+  :dataset/name "ILOSTAT (SDMX REST)"
+  :dataset/source "International Labour Organization"
+  :dataset/source-url "https://sdmx.ilo.org/rest/dataflow"
+  :dataset/update-schedule :continuous
+  :dataset/measures ["employment" "wages"]
+  :dataset/note "www.ilo.org / ilostat.ilo.org の HTML 面は bot に 403 のため、検証できた SDMX endpoint を source とする"}
+
+ ;; ─────────────────────── classification / dimension code lists ───────────────────────
+ {:db/id -10
+  :classification/system "isic"
+  :classification/name "ISIC Rev.4 — International Standard Industrial Classification"
+  :classification/authority "United Nations Statistics Division"
+  :classification/url "https://unstats.un.org/unsd/classifications/Econ/isic"
+  :classification/structure-url "https://unstats.un.org/unsd/classifications/Econ/Download/In%20Text/ISIC_Rev_4_english_structure.txt"
+  :classification/note "README の規約どおり IPQC は ISIC を指す別名として扱う"}
+
+ {:db/id -11
+  :classification/system "cofog"
+  :classification/name "COFOG — Classification of the Functions of Government"
+  :classification/authority "United Nations Statistics Division"
+  :classification/url "https://unstats.un.org/unsd/classifications/Family/Detail/4"}
+
+ {:db/id -12
+  :classification/system "cpc"
+  :classification/name "CPC Ver.2.1 — Central Product Classification"
+  :classification/authority "United Nations Statistics Division"
+  :classification/url "https://unstats.un.org/unsd/classifications/Econ/cpc"}
+
+ {:db/id -13
+  :classification/system "nace"
+  :classification/name "NACE Rev.2 — Statistical classification of economic activities in the European Community"
+  :classification/authority "Eurostat"
+  :classification/url "https://ec.europa.eu/eurostat/web/nace"}
+
+ {:db/id -14
+  :classification/system "hs"
+  :classification/name "HS 2022 — Harmonized Commodity Description and Coding System"
+  :classification/authority "World Customs Organization"
+  :classification/url "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx"}
+
+ {:db/id -15
+  :classification/system "m49"
+  :classification/name "UN M49 — Standard country or area codes for statistical use"
+  :classification/authority "United Nations Statistics Division"
+  :classification/url "https://unstats.un.org/unsd/methodology/m49/"
+  :classification/note "geo の国/地域コード正規化。ISO 3166 本体は iso.org が bot に 403 のため URL 非収載"}
+
+ ;; ──────────────────── 取得できなかった出典（URL は載せない）────────────────────
+ {:db/id -16
+  :catalog/unverified-sources
+  ["IMF Data / DataMapper API — www.imf.org が non-browser client に HTTP 403（2026-08-21 実測）"
+   "US Census NAICS — www.census.gov/naics が HTTP 403（2026-08-21 実測）"
+   "ISO 3166 country codes — www.iso.org が HTTP 403（2026-08-21 実測）"
+   "UN Comtrade API — comtradeapi.un.org root が HTTP 404（2026-08-21 実測）"]
+  :catalog/unverified-note "README が名指しする出典のうち機械取得を拒む面。収載するには browser 経由の取得手順か公式ミラーの特定が要る"}]
