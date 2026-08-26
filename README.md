@@ -19,7 +19,7 @@
 - 国別・産業別・年齢別・プロダクト別のクロス集計
 - トレンド（年次推移）、構成比（シェア）、比較（国際比較）
 
-4. 可視化（Svelte）
+4. 可視化（ClojureScript / reagent + re-frame）
 - フィルタと group-by を UI で選び、チャートに描画
 - 大規模データは Parquet で配布し、ブラウザ側で DuckDB-Wasm により集計して描画する
 
@@ -52,7 +52,7 @@
 
 推奨アーキテクチャ（段階導入）:
 
-1. CDN UI (`projects/.../wasm/marketer-ui-*/svelte`)
+1. CDN UI (`appview/marketer-ui-iewsbshk/cljs`, ClojureScript + reagent + re-frame)
 - カタログ取得（後述の MCP） + Parquet URL を受け取る
 - 受け取った Parquet/CSV を DuckDB-Wasm で集計し、チャート描画
 
