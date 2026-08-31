@@ -1,0 +1,212 @@
+;; Statistical source register for the marketer data plane
+;; (README.md「Data Contract (DIV-2)」: 観測値には source_url / license /
+;; revision で出典・再現性を残す、とある。このファイルはその出典の正本。)
+;;
+;; Until this file existed, catalog.edn carried the only URL list and it had no
+;; verifier: its rule ("ここに載る URL は載せた時点で実際に取得し HTTP 2xx を
+;; 確認したものだけ") was a dated comment, not a runnable check. This register
+;; carries the STATISTICAL AUTHORITY side — the law and the official portals
+;; whose data the catalog's datasets serve — and every entry is re-fetched on
+;; every run by scripts/verify-facts.cljs.
+;;
+;; Shape is tx-data (a vector of entity maps), like every other EDN corpus in
+;; this workspace. :source/id is the join key. A source not in this table has
+;; NO basis for a claim in this repository — extend the table, never invent an
+;; id or a URL.
+;;
+;; Each :source/verify tag names WHICH check establishes the entry:
+;;
+;;   :e-gov-law-id   Resolve the law id through the e-Gov law API and require
+;;                   the title and the law number to still match. HTTP status
+;;                   is never consulted: laws.e-gov.go.jp answers 200 for
+;;                   /law/<anything>, so a URL that loads proves nothing.
+;;
+;;   :page-identity  2xx, final URL still the page asked for, declared
+;;                   charset, and the <title> recorded below.
+;;
+;;   :page-text      All of :page-identity, plus every string in
+;;                   :page/must-contain present in the de-tagged body.
+;;
+;; HOST BEHAVIOURS WERE MEASURED 2026-09-01 AND ARE RE-MEASURED ON EVERY RUN.
+;; The :host-behaviour entities say what each host does with a path that does
+;; not exist; the verifier fetches one on every host cited here and fails if
+;; the answer changed:
+;;
+;;   www.customs.go.jp   404, plain IETF body — status discriminates.
+;;   ec.europa.eu        404 with title "Status 404 - Eurostat".
+;;   unstats.un.org      404 with title "404 - File or directory not found.".
+;;   comtradeplus.un.org **200** — an Angular SPA shell (3228 bytes, title
+;;                       "UN Comtrade") at ANY path, real or invented. Status
+;;                       discriminates nothing on this host; the only guard is
+;;                       the title. :host/missing-path :serves-spa records the
+;;                       measurement, and the check-host branch requires the
+;;                       shell title to still match.
+;;
+;; Measured and NOT cited this run, recorded so nobody re-litigates them
+;; blind: www.imf.org still answers 403 (Access Denied, Akamai) to an
+;; automated client; www.census.gov still 403 (Cloudflare); stat.unido.org
+;;   serves a Cloudflare "Just a moment..." challenge; the UN Comtrade API
+;; (comtradeapi.un.org) answers 401 requiring a subscription key — the
+;; comtradeplus.un.org PORTAL above is cited instead, and the key-gated API is
+;; not.
+;;
+;; Claims stop at the level actually checked: law identity, and for the pages
+;; the title, the URL, the charset and the strings read on 2026-09-01. No
+;; dataset contents are asserted here; catalog.edn remains the dataset-level
+;; register and its own checked-at discipline governs that file.
+
+[
+ ;; ── What each host does with a path that does not exist ────────────────────
+
+ {:source/id "host.comtradeplus-un-org"
+  :source/kind :host-behaviour
+  :host/name "comtradeplus.un.org"
+  :host/missing-path :serves-spa
+  :host/spa-title "UN Comtrade"
+  :source/note "UN Comtrade+ portal. Measured 2026-09-01: a path that does not
+                exist answers HTTP 200 with the same 3228-byte Angular shell
+                the front page serves — title \"UN Comtrade\", no server-side
+                404 anywhere. Status cannot discriminate on this host; the
+                title is the only guard, and check-host re-measures it."}
+
+ {:source/id "host.www-customs-go-jp"
+  :source/kind :host-behaviour
+  :host/name "www.customs.go.jp"
+  :host/missing-path :refuses
+  :host/missing-status 404
+  :source/note "Japan Customs (財務省関税局). Measured 2026-09-01: a path that
+                does not exist answers 404 with a plain 196-byte IETF body at
+                the requested URL."}
+
+ {:source/id "host.ec-europa-eu"
+  :source/kind :host-behaviour
+  :host/name "ec.europa.eu"
+  :host/missing-path :refuses
+  :host/missing-status 404
+  :source/note "Eurostat's host. Measured 2026-09-01: a path that does not
+                exist answers 404 with a 159899-byte branded page titled
+                \"Status 404 - Eurostat\" — a large body and a real title, so
+                neither size nor the presence of a title is a signal here;
+                only the status is."}
+
+ {:source/id "host.unstats-un-org"
+  :source/kind :host-behaviour
+  :host/name "unstats.un.org"
+  :host/missing-path :refuses
+  :host/missing-status 404
+  :source/note "UN Statistics Division. Measured 2026-09-01: a path that does
+                not exist answers 404 with a 1245-byte IIS page titled
+                \"404 - File or directory not found.\"."}
+
+ ;; ── Statute ────────────────────────────────────────────────────────────────
+
+ {:source/id "law.stats-act"
+  :source/kind :statute
+  :source/title "統計法"
+  :source/publisher "e-Gov 法令検索 (Digital Agency)"
+  :source/url "https://laws.e-gov.go.jp/law/419AC0000000053"
+  :source/verify :e-gov-law-id
+  :egov/law-id "419AC0000000053"
+  :egov/law-title "統計法"
+  :egov/law-num "平成十九年法律第五十三号"
+  :source/retrieved-at "2026-09-01"
+  :source/covers #{:official-statistics :survey-governance}
+  :source/note "The Statistics Act — the statute under which 基幹統計
+                (including 国勢調査, the age_band normalisation input the
+                README names) is designated and published. Identity only; no
+                article text is asserted, because none was read. Resolved
+                through the e-Gov law API on 2026-09-01, which is the only
+                resolution that means anything: the /law/ page answers 200 for
+                ids that do not exist."}
+
+ ;; ── Official portals the catalog's datasets are read from ─────────────────
+
+ {:source/id "page.comtradeplus-portal"
+  :source/kind :statistical-source
+  :source/title "UN Comtrade+ portal"
+  :source/publisher "United Nations Statistics Division"
+  :source/url "https://comtradeplus.un.org/"
+  :source/verify :page-identity
+  :page/title "UN Comtrade"
+  :source/retrieved-at "2026-09-01"
+  :source/covers #{:trade :hs-classification}
+  :source/note "The portal half of UN Comtrade — the trade-measure source the
+                catalog's unverified-sources entry names. The key-gated API
+                (comtradeapi.un.org) answered 401 on 2026-09-01 and is not
+                cited. This host serves the same SPA shell for every path, so
+                :page-identity here establishes the title at this URL and
+                nothing stronger; see the host entity."}
+
+ {:source/id "page.customs-trade-stats"
+  :source/kind :statistical-source
+  :source/title "Trade Statistics of Japan"
+  :source/publisher "財務省関税局 (Japan Customs, Ministry of Finance)"
+  :source/url "https://www.customs.go.jp/toukei/info/index_e.htm"
+  :source/verify :page-text
+  :page/title "Trade Statistics of Japan Ministry of Finance"
+  :page/charset "iso-8859-1"
+  :page/must-contain ["Trade Statistics of Japan" "Ministry of Finance Japan"]
+  :source/retrieved-at "2026-09-01"
+  :source/covers #{:trade :hs-classification}
+  :source/note "Japan's official trade statistics — HS-coded by construction,
+                matching the catalog's hs classification system. The host
+                declares ISO-8859-1 and carries no charset in Content-Type
+                (the meta tag is what the verifier reads), so the charset is
+                declared rather than assumed. The title carries a double
+                space in the HTML; the verifier normalises whitespace before
+                comparing."}
+
+ {:source/id "page.eurostat-nace"
+  :source/kind :statistical-source
+  :source/title "Overview - NACE - Eurostat"
+  :source/publisher "Eurostat (European Commission)"
+  :source/url "https://ec.europa.eu/eurostat/web/nace"
+  :source/verify :page-text
+  :page/title "Overview - NACE - Eurostat"
+  :page/must-contain ["statistical classification of economic activities"
+                      "NACE Rev. 2.1"]
+  :source/retrieved-at "2026-09-01"
+  :source/covers #{:nace-classification :industry-normalisation}
+  :source/note "The NACE overview — the classification the catalog's
+                nace system normalises against. The page states NACE Rev. 2.1
+                applies from 2025 onwards while Rev. 2 covers 2008-2024,
+                which is a versioning fact any NACE-keyed observation here has
+                to carry; both strings are pinned so a version switchover
+                fails loudly instead of silently."}
+
+ {:source/id "page.unstats-m49"
+  :source/kind :statistical-source
+  :source/title "UNSD — Methodology"
+  :source/publisher "United Nations Statistics Division"
+  :source/url "https://unstats.un.org/unsd/methodology/m49/"
+  :source/verify :page-identity
+  :page/title "UNSD &mdash; Methodology"
+  :source/retrieved-at "2026-09-01"
+  :source/covers #{:geo-normalisation}
+  :source/note "UN M49 — the geo normalisation input the catalog's m49 entry
+                names (catalog.edn cites the same host). The <title> carries
+                the &mdash; entity literally; the verifier compares the raw
+                title string, so the register records it raw. A ~2 MB page —
+                fetched once per run, which is why the register does not also
+                cite the ISIC/COFOG pages on this host: catalog.edn already
+                carries those URLs under its own checked-at discipline."}
+
+ ;; ── What this register leaves out ──────────────────────────────────────────
+
+ {:source/kind :coverage
+  :coverage/entries 5
+  :coverage/by-verify {:e-gov-law-id 1 :page-identity 2 :page-text 2}
+  :coverage/not-covered
+  ["IMF Data / DataMapper — www.imf.org answers 403 (Access Denied) to an
+    automated client, re-measured 2026-09-01. not-cited, not absent."
+   "US Census NAICS — www.census.gov answers 403 (Cloudflare), re-measured
+    2026-09-01. not-cited, not absent."
+   "UNIDO statistics — stat.unido.org serves a Cloudflare \"Just a moment...\"
+    challenge, 2026-09-01. not-cited, not absent."
+   "UN Comtrade API — comtradeapi.un.org answers 401 requiring a subscription
+    key, 2026-09-01. The portal is cited; the API is not, because a response
+    this client cannot read is not a citation."
+   "World Bank front page — data.worldbank.org answers 404 (not 403) for a
+    missing path but its real pages ship no static <title>, so :page-identity
+    has nothing to compare; the dataset URL stays in catalog.edn instead."]}
+ ]
