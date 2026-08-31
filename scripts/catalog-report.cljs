@@ -1,0 +1,212 @@
+#!/usr/bin/env nbb
+;; scripts/catalog-report.cljs — catalog.edn の現在地を operator に読める形で出す。
+;;
+;;   nbb scripts/catalog-report.cljs [--catalog <path>] [--urls] [--timeout <sec>]
+;;
+;; catalog.edn は README.md「Data Contract (DIV-2)」の Dataset (metadata) の正本で、
+;; ファイル冒頭が自分で規則を書いている ——「ここに載る URL は載せた時点で実際に
+;; 取得し HTTP 2xx を確認したものだけ」。その規則が今日も成り立っているかは、
+;; ファイルを読むだけでは分からない（`:catalog/checked-at` は過去の主張であって
+;; 現在の状態ではない）。このスクリプトは 2 つを分けて答える:
+;;
+;;   既定（--urls なし）  静的検査のみ。ネットワークを触らない。
+;;                        件数の申告と実体の一致・URL の形・分類体系の被覆を見る。
+;;   --urls               上に加えて、載っている URL を実際に叩いて status を測る。
+;;
+;; 終了コードは 3 値。**「測れなかった」を「問題なし」と同じ値で返さない**
+;; （superproject CLAUDE.md「検査を書く前・緑を信じる前の 6 問」）:
+;;
+;;   0  検査が走り、finding が無かった
+;;   1  検査が走り、finding が在った
+;;   2  REFUSED —— 検査そのものが成立しなかった（catalog が読めない / 0 件）
+;;
+;; --urls を付けなかった実行は、URL について**何も主張しない**。出力にそう書く。
+
+(ns catalog-report
+  (:require [clojure.edn :as edn]
+            [clojure.string :as str]
+            ["fs" :as fs]))
+
+;; ---------------------------------------------------------------- args
+
+(defn- parse-args [args]
+  (loop [a args m {:catalog "catalog.edn" :urls? false :timeout 25}]
+    (if (empty? a)
+      m
+      (let [[k v & more] a]
+        (case k
+          "--catalog" (recur more (assoc m :catalog v))
+          "--timeout" (recur more (assoc m :timeout (js/parseInt v 10)))
+          "--urls"    (recur (rest a) (assoc m :urls? true))
+          (recur (rest a) m))))))
+
+(def opts (parse-args (vec (.slice (.-argv js/process) 2))))
+
+(defn- refuse! [msg]
+  (println (str "REFUSED\t" msg))
+  (println "この実行は catalog について何も主張しない。")
+  (.exit js/process 2))
+
+;; ---------------------------------------------------------------- read
+
+(def entries
+  (let [path (:catalog opts)
+        text (try (.toString (.readFileSync fs path) "utf8")
+                  (catch :default e
+                    (refuse! (str path " を読めない: " (.-message e)))))
+        data (try (edn/read-string text)
+                  (catch :default e
+                    (refuse! (str path " が EDN として読めない: " (.-message e)))))]
+    (when-not (vector? data)
+      (refuse! (str path " の最上位が tx-data の vector ではない")))
+    (when (zero? (count data))
+      (refuse! (str path " の entity が 0 件")))
+    data))
+
+(def header       (first (filter :catalog/id entries)))
+(def datasets     (filterv :dataset/id entries))
+(def classifs     (filterv :classification/system entries))
+(def unverified   (:catalog/unverified-sources (first (filter :catalog/unverified-sources entries))))
+
+;; ---------------------------------------------------------------- url harvest
+
+(def url-attrs
+  [:dataset/source-url :dataset/api-url :dataset/license-url
+   :classification/url :classification/structure-url])
+
+(defn- urls-of [e]
+  (for [a url-attrs :let [v (get e a)] :when v]
+    {:url v :attr a :owner (or (:dataset/id e) (:classification/system e))}))
+
+(def all-urls (vec (mapcat urls-of entries)))
+
+;; ---------------------------------------------------------------- static checks
+
+(def findings (atom []))
+(defn- finding! [kind msg] (swap! findings conj {:kind kind :msg msg}))
+
+(defn- check-counts! []
+  (let [declared (:catalog/entry-count header)
+        actual   (+ (count datasets) (count classifs))]
+    (cond
+      (nil? declared) (finding! :count "header に :catalog/entry-count が無い")
+      (not= declared actual)
+      (finding! :count (str ":catalog/entry-count=" declared " だが実体は "
+                            actual " 件（dataset " (count datasets)
+                            " + classification " (count classifs) "）")))))
+
+(defn- check-url-shape! []
+  (doseq [{:keys [url attr owner]} all-urls]
+    (when-not (str/starts-with? url "https://")
+      (finding! :url-shape (str owner " " attr " が https:// で始まらない: " url)))))
+
+(defn- check-unverified-carry-no-urls! []
+  ;; ファイル冒頭の規則:「取得できなかった出典は名前のみ記録する（URL は載せない）」
+  (doseq [s (or unverified [])]
+    (when (re-find #"https?://" s)
+      (finding! :unverified-url
+                (str ":catalog/unverified-sources に URL が載っている: " s)))))
+
+(defn- check-readme-classifications! []
+  ;; README.md が名指しする分類体系が code list として載っているか。
+  (let [want #{"isic" "cofog" "cpc" "nace" "hs"}
+        have (set (map :classification/system classifs))]
+    (doseq [w (sort (remove have want))]
+      (finding! :classification (str "README が名指しする分類体系 " w
+                                     " の code list が catalog に無い")))))
+
+;; ---------------------------------------------------------------- report
+
+(defn- days-since [iso]
+  (when iso
+    (let [t (.parse js/Date iso)]
+      (when-not (js/isNaN t)
+        (js/Math.floor (/ (- (.now js/Date) t) 86400000))))))
+
+(defn finish! []
+  (println)
+  (if (empty? @findings)
+    (println (str "OK\tfinding 0 件"
+                  (when-not (:urls? opts)
+                    " —— ただし --urls を付けていないので URL については何も測っていない")))
+    (do (println (str "FINDINGS\t" (count @findings) " 件"))
+        (doseq [{:keys [kind msg]} @findings]
+          (println (str "  [" (name kind) "] " msg)))))
+  (.exit js/process (if (empty? @findings) 0 1)))
+
+;; ---------------------------------------------------------------- live urls
+
+(def browser-ua
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36")
+
+(defn- probe!
+  "1 URL の HTTP status と所要 ms。到達できなかったときは :status nil と理由を返す
+   —— 到達できなかったことを 2xx とも 4xx とも区別できる形で持つ。
+
+   所要 ms を status の隣に必ず出す。timeout で切れた URL は「死んでいる URL」と
+   同じ顔をするが、別物である（実測 2026-09-01: OECD の dataflow は 8.9 MB を
+   15 秒かけて 200 で返すので、21 本並列 + 高 load では既定 25 秒を越えて abort
+   する。同じ URL を単体で叩くと 200）。ms が出ていれば、遅いのか死んでいるのかを
+   読む側が区別できる。"
+  [url]
+  (let [ctl   (js/AbortController.)
+        t     (js/setTimeout #(.abort ctl) (* 1000 (:timeout opts)))
+        began (.now js/Date)
+        ms    #(- (.now js/Date) began)]
+    (-> (js/fetch url #js {:redirect "follow"
+                           :signal (.-signal ctl)
+                           :headers #js {"user-agent" browser-ua
+                                         "accept" "*/*"}})
+        (.then (fn [r] (js/clearTimeout t) {:status (.-status r) :ms (ms)}))
+        (.catch (fn [e] (js/clearTimeout t) {:status nil :ms (ms) :error (.-message e)})))))
+
+(defn- live-checks! []
+  (-> (js/Promise.all (clj->js (map #(probe! (:url %)) all-urls)))
+      (.then
+       (fn [results]
+         (let [rs (map (fn [u r] (merge u (js->clj r :keywordize-keys true)))
+                       all-urls results)]
+           (println)
+           (println (str "URL 実測\t" (count rs) " 本  (timeout " (:timeout opts) "s, browser UA)"))
+           (doseq [{:keys [url attr owner status ms error]} rs]
+             (println (str "  " (or status "----") "\t" (or ms "?") "ms\t" owner " " attr "\t" url
+                           (when error (str "\t" error)))))
+           (doseq [{:keys [url owner status error]} rs]
+             (cond
+               (nil? status)
+               (finding! :url-unreachable
+                         (str owner " の URL に到達できなかった（2xx とも 4xx とも言えない）: "
+                              url " — " error
+                              "。--timeout を伸ばして測り直すまで、この URL は"
+                              "『死んでいる』ではなく『未測定』である"))
+               (not (<= 200 status 299))
+               (finding! :url-dead
+                         (str owner " の URL が HTTP " status "（catalog の規則は 2xx のみ収載）: " url))))
+           (finish!))))))
+
+(defn- main []
+  (println (str "catalog\t" (:catalog opts)))
+  (println (str "SCANNED\t" (count entries) " entity"))
+  (println (str "  dataset\t" (count datasets)))
+  (println (str "  classification\t" (count classifs)))
+  (println (str "  unverified-source\t" (count (or unverified []))))
+  (let [at (:catalog/checked-at header)
+        d  (days-since at)]
+    (println (str "checked-at\t" (or at "(無い)")
+                  (when d (str "\t= " d " 日前")))))
+  (println (str "url\t" (count all-urls) " 本が catalog に載っている"))
+  (println)
+  (println "datasets:")
+  (doseq [d (sort-by :dataset/id datasets)]
+    (println (str "  " (:dataset/id d)
+                  "\t" (if (:dataset/verified-sample d) "sample:実測値あり" "sample:なし")
+                  "\t" (:dataset/name d))))
+  (check-counts!)
+  (check-url-shape!)
+  (check-unverified-carry-no-urls!)
+  (check-readme-classifications!)
+  (if (:urls? opts)
+    (live-checks!)
+    (finish!)))
+
+(main)
