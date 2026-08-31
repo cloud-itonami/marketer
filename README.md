@@ -2,6 +2,12 @@
 
 `marketer.etzhayyim.com` 向けに、全世界のマーケット統計データを収集し、分類体系（COFOG / ISIC など）で正規化して可視化する。
 
+**手を動かして現在地を確かめるなら `docs/operator-quickstart.md`。**
+この README は設計（何を作るか）を書いている。今日この repo で実際に動くのは
+`catalog.edn`（データセット正本）・`scripts/catalog-report.cljs`（その現在地を出す
+レポータ）・`appview/marketer-ui-iewsbshk/cljs`（UI）の 3 つで、下記
+Architecture の 2（MCP Backend）と 3（Ingestion Workers）は**まだ無い**。
+
 ## Capability (CV-1)
 
 1. 統計データ収集
@@ -26,6 +32,10 @@
 ## Data Contract (DIV-2)
 
 実装の中心は「観測値 Observation（ファクト）」と「分類/ディメンション（ディメンション）」の分離。
+
+Dataset (metadata) 側の正本は `catalog.edn`。収載規則（2xx を確認した URL だけを
+載せる / 取得できなかった出典は名前だけ）はそのファイルの冒頭にあり、`nbb
+scripts/catalog-report.cljs --urls` が今日もそれが成り立っているかを測る。
 
 ### Observation (fact)
 
