@@ -37,7 +37,7 @@ Node の global `fetch` を使うので Node 18 以上が要る。
 ## 2. catalog を読む（ネットワークを触らない）
 
 ```bash
-nbb scripts/catalog-report.cljk
+kbb --backend sci scripts/catalog-report.cljk
 ```
 
 実際の出力（2026-09-01）:
@@ -78,12 +78,12 @@ OK	finding 0 件 —— ただし --urls を付けていないので URL につ�
 無かった検査と同じ値を返す」形を避けるため。
 
 ```bash
-nbb scripts/catalog-report.cljk; echo "exit=$?"
+kbb --backend sci scripts/catalog-report.cljk; echo "exit=$?"
 ```
 
 ⚠ `nbb ... | tail` のようにパイプで受けると `$?` は `tail` の値になり、
 **検査の答えを一度も見ないまま `exit=0` が出る**。読みたいときは先にファイルへ
-落として exit を採る（`nbb scripts/catalog-report.cljk > /tmp/r.log; echo $?`）。
+落として exit を採る（`kbb --backend sci scripts/catalog-report.cljk > /tmp/r.log; echo $?`）。
 
 ## 3. catalog の URL が今日も生きているか（ネットワークを触る）
 
@@ -92,7 +92,7 @@ nbb scripts/catalog-report.cljk; echo "exit=$?"
 分からない。
 
 ```bash
-nbb scripts/catalog-report.cljk --urls --timeout 60
+kbb --backend sci scripts/catalog-report.cljk --urls --timeout 60
 ```
 
 実際の出力の末尾（2026-09-01、21 本すべて 200）:
@@ -142,7 +142,7 @@ bot に 403 か 404 を返す面）。`:dataset/verified-sample` を書き足す
 ```bash
 cd appview/marketer-ui-iewsbshk/cljs
 npm ci                                   # 129 packages / 12s（初回のみ）
-npx shadow-cljs compile test && node out/tests.js
+amu compile --target wasm32-browser test && node out/tests.js
 ```
 
 実際の出力（2026-09-01）:
@@ -161,7 +161,7 @@ Ran 4 tests containing 11 assertions.
 ビルドと配信:
 
 ```bash
-npx shadow-cljs compile app              # → public/js/app.js（gitignore 済み）
+amu compile --target wasm32-browser app              # → public/js/app.js（gitignore 済み）
 cd public && python3 -m http.server 8099 --bind 127.0.0.1
 ```
 
@@ -181,10 +181,10 @@ status=200 bytes=3360432
 document は 1 枚。静的サーバは何でもよく、上は手元に必ず在るものを選んだだけ。
 
 ⚠ **JVM を起こすビルドは resource guard を通す。** このワークスペースは 1 台に
-多数のセッションが同居しているので、`shadow-cljs compile` を直接叩かず
+多数のセッションが同居しているので、`amu compile --target wasm32-browser` を直接叩かず
 
 ```bash
-node <superproject>/scripts/resource-guard.mjs run build -- npx shadow-cljs compile app
+node <superproject>/scripts/resource-guard.mjs run build -- amu compile --target wasm32-browser app
 ```
 
 の形で 1 本に直列化する（superproject CLAUDE.md の repo-wide resource governor）。
