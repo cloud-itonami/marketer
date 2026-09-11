@@ -7,7 +7,7 @@
 ;; 確認したものだけ") was a dated comment, not a runnable check. This register
 ;; carries the STATISTICAL AUTHORITY side — the law and the official portals
 ;; whose data the catalog's datasets serve — and every entry is re-fetched on
-;; every run by scripts/verify-facts.cljs.
+;; every run by scripts/verify-facts.cljk.
 ;;
 ;; Shape is tx-data (a vector of entity maps), like every other EDN corpus in
 ;; this workspace. :source/id is the join key. A source not in this table has
