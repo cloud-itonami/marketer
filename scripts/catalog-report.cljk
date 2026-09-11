@@ -1,7 +1,7 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; scripts/catalog-report.cljk — catalog.edn の現在地を operator に読める形で出す。
 ;;
-;;   nbb scripts/catalog-report.cljk [--catalog <path>] [--urls] [--timeout <sec>]
+;;   kbb --backend sci scripts/catalog-report.cljk [--catalog <path>] [--urls] [--timeout <sec>]
 ;;
 ;; catalog.edn は README.md「Data Contract (DIV-2)」の Dataset (metadata) の正本で、
 ;; ファイル冒頭が自分で規則を書いている ——「ここに載る URL は載せた時点で実際に
