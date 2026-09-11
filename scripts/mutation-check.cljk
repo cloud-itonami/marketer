@@ -2,8 +2,8 @@
 ;; Breaks facts.edn one way at a time and requires verify-facts.cljs to object
 ;; FOR THE REASON IT NAMES.
 ;;
-;;   nbb scripts/mutation-check.cljs              (structural only -- no network)
-;;   nbb scripts/mutation-check.cljs --network    (also the fetching branches)
+;;   nbb scripts/mutation-check.cljk              (structural only -- no network)
+;;   nbb scripts/mutation-check.cljk --network    (also the fetching branches)
 ;;
 ;; WHY THE REASON AND NOT THE COLOUR.
 ;; A negative test that asserts only "the run went red" counts a run that went
@@ -50,7 +50,7 @@
 ;; mutation still is. If they all go red, the wrong thing was broken and the
 ;; demonstration proves nothing -- a failure mode this workspace hit four times
 ;; in one day.
-(def verifier-path (flag "--verifier" "scripts/verify-facts.cljs"))
+(def verifier-path (flag "--verifier" "scripts/verify-facts.cljk"))
 
 ;; --only re-runs named mutations. The suite reports INCONCLUSIVE when a bot
 ;; challenge stood in the way and tells you to re-run rather than reading it as

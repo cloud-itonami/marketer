@@ -15,7 +15,7 @@
 | 場所 | 何の正本か |
 |---|---|
 | `catalog.edn` | データセットと分類体系の一覧（README の "Data Contract (DIV-2)" の Dataset 側） |
-| `scripts/catalog-report.cljs` | `catalog.edn` の現在地を出す operator 用レポータ |
+| `scripts/catalog-report.cljk` | `catalog.edn` の現在地を出す operator 用レポータ |
 | `appview/marketer-ui-iewsbshk/cljs` | 可視化 UI（ClojureScript + reagent + re-frame + jp-go-dds） |
 | `README.md` | 設計（capability・データ契約・アーキテクチャ） |
 | `PROJECT.jsonld` | 対外メタデータ（`marketer.etzhayyim.com`） |
@@ -37,7 +37,7 @@ Node の global `fetch` を使うので Node 18 以上が要る。
 ## 2. catalog を読む（ネットワークを触らない）
 
 ```bash
-nbb scripts/catalog-report.cljs
+nbb scripts/catalog-report.cljk
 ```
 
 実際の出力（2026-09-01）:
@@ -78,12 +78,12 @@ OK	finding 0 件 —— ただし --urls を付けていないので URL につ�
 無かった検査と同じ値を返す」形を避けるため。
 
 ```bash
-nbb scripts/catalog-report.cljs; echo "exit=$?"
+nbb scripts/catalog-report.cljk; echo "exit=$?"
 ```
 
 ⚠ `nbb ... | tail` のようにパイプで受けると `$?` は `tail` の値になり、
 **検査の答えを一度も見ないまま `exit=0` が出る**。読みたいときは先にファイルへ
-落として exit を採る（`nbb scripts/catalog-report.cljs > /tmp/r.log; echo $?`）。
+落として exit を採る（`nbb scripts/catalog-report.cljk > /tmp/r.log; echo $?`）。
 
 ## 3. catalog の URL が今日も生きているか（ネットワークを触る）
 
@@ -92,7 +92,7 @@ nbb scripts/catalog-report.cljs; echo "exit=$?"
 分からない。
 
 ```bash
-nbb scripts/catalog-report.cljs --urls --timeout 60
+nbb scripts/catalog-report.cljk --urls --timeout 60
 ```
 
 実際の出力の末尾（2026-09-01、21 本すべて 200）:

@@ -4,7 +4,7 @@
 
 **手を動かして現在地を確かめるなら `docs/operator-quickstart.md`。**
 この README は設計（何を作るか）を書いている。今日この repo で実際に動くのは
-`catalog.edn`（データセット正本）・`scripts/catalog-report.cljs`（その現在地を出す
+`catalog.edn`（データセット正本）・`scripts/catalog-report.cljk`（その現在地を出す
 レポータ）・`appview/marketer-ui-iewsbshk/cljs`（UI）の 3 つで、下記
 Architecture の 2（MCP Backend）と 3（Ingestion Workers）は**まだ無い**。
 
@@ -35,7 +35,7 @@ Architecture の 2（MCP Backend）と 3（Ingestion Workers）は**まだ無い
 
 Dataset (metadata) 側の正本は `catalog.edn`。収載規則（2xx を確認した URL だけを
 載せる / 取得できなかった出典は名前だけ）はそのファイルの冒頭にあり、`nbb
-scripts/catalog-report.cljs --urls` が今日もそれが成り立っているかを測る。
+scripts/catalog-report.cljk --urls` が今日もそれが成り立っているかを測る。
 
 ### Observation (fact)
 
