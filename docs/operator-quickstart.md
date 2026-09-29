@@ -187,7 +187,7 @@ document は 1 枚。静的サーバは何でもよく、上は手元に必ず�
 node <superproject>/scripts/resource-guard.mjs run build -- amu compile --target wasm32-browser app
 ```
 
-の形で 1 本に直列化する（superproject CLAUDE.md の repo-wide resource governor）。
+の形で 1 本に直列化する（superproject AGENTS.md の repo-wide resource governor）。
 
 ## 6. この文書が踏んだもの・踏んでいないもの
 
@@ -217,5 +217,5 @@ node <superproject>/scripts/resource-guard.mjs run build -- amu compile --target
 
 - `README.md` — capability (CV-1) とデータ契約 (DIV-2)
 - `catalog.edn` — 冒頭のコメントが収載規則の正本
-- superproject の `CLAUDE.md` — UI スタック（jp-go-dds / reagent / re-frame）と
+- superproject の `AGENTS.md` — UI スタック（jp-go-dds / reagent / re-frame）と
   single-page app 規則、resource guard、EDN 文書の規約

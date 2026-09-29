@@ -5,7 +5,7 @@
   `svelte/src/main.ts`): a single static page rendering a title and a
   subtitle, no other behaviour existed to preserve. Rebuilt on this
   workspace's mandatory stack (reagent + re-frame + hiccup, jp-go-dds as the
-  base design system — see CLAUDE.md / skill `kotoba-uiux`) instead of
+  base design system — see AGENTS.md / skill `kotoba-uiux`) instead of
   inventing new features.
 
   `default-db` / `initialize-db-handler` / `title-sub` / `subtitle-sub` are
